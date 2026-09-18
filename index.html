@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CCNA · Subnetting IPv4</title>
+  <style>
+    :root { --bg:#00457C; --panel:#003666; --text:#f1f5f9; --muted:#c5d7ea; --line:#2a6aa0; --ok:#22c55e; --bad:#ef4444; --accent:#F99800; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:"Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:20px; }
+    .wrap { max-width:820px; margin:0 auto; }
+    h1 { font-size:1.4rem; font-weight:750; } h1 span { color:var(--accent); }
+    .subtitle { color:var(--muted); margin:6px 0 18px; font-size:0.92rem; }
+    .card { background:rgba(0,54,102,.8); border:1px solid var(--line); border-radius:16px; padding:18px; }
+    .given { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+    .ip { font-size:1.35rem; font-weight:800; letter-spacing:.02em; color:#fff; }
+    .ip small { color:var(--accent); font-size:1.05rem; }
+    .badge { border:1px solid var(--line); background:var(--panel); border-radius:999px; padding:6px 12px; font-size:0.82rem; font-weight:700; }
+    .grid { display:grid; gap:12px; }
+    label { font-size:0.78rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:700; display:block; margin-bottom:6px; }
+    input {
+      width:100%; border:1px solid var(--line); background:#0b1220; color:#fff;
+      border-radius:10px; padding:12px 14px; font-size:1.05rem; font-family:ui-monospace,Consolas,monospace;
+    }
+    input:focus { outline:2px solid var(--accent); border-color:var(--accent); }
+    input.ok { border-color:var(--ok); background:rgba(34,197,94,.12); }
+    input.bad { border-color:var(--bad); background:rgba(239,68,68,.12); }
+    .hint { min-height:1.2em; font-size:0.8rem; margin-top:4px; color:var(--muted); }
+    .hint.ok { color:#86efac; } .hint.bad { color:#fca5a5; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+    button {
+      border:0; border-radius:999px; padding:10px 16px; font-weight:700; cursor:pointer; font-size:0.9rem;
+    }
+    .primary { background:var(--accent); color:#1a1200; }
+    .ghost { background:transparent; color:#fff; border:1px solid var(--line); }
+    .feedback { margin-top:14px; border-radius:12px; padding:12px 14px; background:#0b1220; border:1px solid var(--line); color:#cbd5e1; font-size:0.9rem; min-height:48px; }
+    .feedback strong { color:#fff; }
+    .note { margin-top:12px; color:#7aa0c2; font-size:0.78rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>CCNA · <span>Subnetting IPv4</span></h1>
+    <p class="subtitle">Dada la IP, escribe dirección de red, primer host, último host y broadcast.</p>
+    <div class="card">
+      <div class="given">
+        <div class="ip" id="given">172.16.8.77<small>/28</small></div>
+        <div class="badge" id="progress">Problema 1 / 6</div>
+      </div>
+      <div class="grid">
+        <div>
+          <label for="net">Dirección de red</label>
+          <input id="net" inputmode="decimal" placeholder="ej. 172.16.8.0" autocomplete="off" />
+          <div class="hint" id="h-net"></div>
+        </div>
+        <div>
+          <label for="first">Primer host útil</label>
+          <input id="first" inputmode="decimal" placeholder="ej. 172.16.8.1" autocomplete="off" />
+          <div class="hint" id="h-first"></div>
+        </div>
+        <div>
+          <label for="last">Último host útil</label>
+          <input id="last" inputmode="decimal" placeholder="ej. 172.16.8.14" autocomplete="off" />
+          <div class="hint" id="h-last"></div>
+        </div>
+        <div>
+          <label for="bcast">Broadcast</label>
+          <input id="bcast" inputmode="decimal" placeholder="ej. 172.16.8.15" autocomplete="off" />
+          <div class="hint" id="h-bcast"></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" type="button" id="btnCheck">Comprobar</button>
+        <button class="ghost" type="button" id="btnShow">Ver solución</button>
+        <button class="ghost" type="button" id="btnNext">Siguiente problema</button>
+      </div>
+      <div class="feedback" id="feedback">Escribe las 4 direcciones y pulsa Comprobar. Acepta el formato a.b.c.d</div>
+    </div>
+    <p class="note">Formación Servicios TIC / CCNA · IPv4 subnetting</p>
+  </div>
+  <script>
+    const PROBLEMS = [
+      { ip:"172.16.8.77", p:28, net:"172.16.8.64", first:"172.16.8.65", last:"172.16.8.78", bcast:"172.16.8.79", why:"/28 salta de 16. 77 cae en el bloque .64–.79." },
+      { ip:"192.168.10.50", p:26, net:"192.168.10.0", first:"192.168.10.1", last:"192.168.10.62", bcast:"192.168.10.63", why:"/26 salta de 64. 50 está en .0–.63." },
+      { ip:"10.10.10.50", p:27, net:"10.10.10.32", first:"10.10.10.33", last:"10.10.10.62", bcast:"10.10.10.63", why:"/27 salta de 32. 50 está en .32–.63." },
+      { ip:"172.16.5.67", p:28, net:"172.16.5.64", first:"172.16.5.65", last:"172.16.5.78", bcast:"172.16.5.79", why:"Igual que el ejemplo del quiz: bloque 16, red .64." },
+      { ip:"192.168.1.10", p:30, net:"192.168.1.8", first:"192.168.1.9", last:"192.168.1.10", bcast:"192.168.1.11", why:"/30 salta de 4. .8 red, .9 y .10 hosts, .11 broadcast." },
+      { ip:"192.168.20.130", p:26, net:"192.168.20.128", first:"192.168.20.129", last:"192.168.20.190", bcast:"192.168.20.191", why:"/26: bloques .0, .64, .128, .192. 130 cae en .128." }
+    ];
+    let i = 0;
+    const fields = ["net","first","last","bcast"];
+    const names = { net:"Red", first:"Primer host", last:"Último host", bcast:"Broadcast" };
+    function norm(s){ return (s||"").trim().replace(/\s+/g,""); }
+    function render(){
+      const p = PROBLEMS[i];
+      document.getElementById("given").innerHTML = p.ip + "<small>/"+p.p+"</small>";
+      document.getElementById("progress").textContent = "Problema "+(i+1)+" / "+PROBLEMS.length;
+      fields.forEach(function(f){
+        const el = document.getElementById(f);
+        el.value = ""; el.className = "";
+        document.getElementById("h-"+f).textContent = "";
+        document.getElementById("h-"+f).className = "hint";
+      });
+      document.getElementById("feedback").innerHTML = "Escribe las 4 direcciones y pulsa Comprobar.";
+    }
+    function check(show){
+      const p = PROBLEMS[i];
+      let ok = 0;
+      fields.forEach(function(f){
+        const el = document.getElementById(f);
+        const h = document.getElementById("h-"+f);
+        const val = norm(el.value);
+        if (show) {
+          el.value = p[f]; el.className = "ok";
+          h.textContent = "Solución: "+p[f]; h.className = "hint ok";
+          return;
+        }
+        if (!val) { el.className = "bad"; h.textContent = "Falta este campo."; h.className = "hint bad"; return; }
+        if (val === p[f]) { el.className = "ok"; h.textContent = "Correcto."; h.className = "hint ok"; ok++; }
+        else { el.className = "bad"; h.textContent = "No es "+names[f]+". Revisa el tamaño de bloque."; h.className = "hint bad"; }
+      });
+      if (show) {
+        document.getElementById("feedback").innerHTML = "<strong>Solución.</strong> "+p.why;
+        return;
+      }
+      if (ok === 4) document.getElementById("feedback").innerHTML = "<strong>Perfecto.</strong> "+p.why;
+      else document.getElementById("feedback").innerHTML = "Aciertos: <strong>"+ok+" / 4</strong>. Recuerda: bloque = 256 − último octeto de la máscara.";
+    }
+    document.getElementById("btnCheck").onclick = function(){ check(false); };
+    document.getElementById("btnShow").onclick = function(){ check(true); };
+    document.getElementById("btnNext").onclick = function(){ i = (i+1) % PROBLEMS.length; render(); };
+    document.querySelectorAll("input").forEach(function(el){
+      el.addEventListener("keydown", function(e){ if(e.key==="Enter") check(false); });
+    });
+    render();
+  </script>
+</body>
+</html>
